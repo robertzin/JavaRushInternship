@@ -8,6 +8,10 @@ import com.game.exceptions.ValueNotValidException;
 import com.game.service.PlayerService;
 import com.game.specification.PlayerSpecification;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -26,7 +30,7 @@ public class PlayerController {
     }
 
     @GetMapping("/players")
-    public List<Player> getPlayersList(@RequestParam(value = "name", required = false) String name,
+    public Iterable<Player> getPlayersList(@RequestParam(value = "name", required = false) String name,
                                 @RequestParam(value = "title", required = false) String title,
                                 @RequestParam(value = "race", required = false) Race race,
                                 @RequestParam(value = "profession", required = false) Profession profession,
@@ -41,13 +45,18 @@ public class PlayerController {
                                 @RequestParam(value = "pageNumber", required = false, defaultValue = "0") Integer pageNumber,
                                 @RequestParam(value = "pageSize", required = false, defaultValue = "3") Integer pageSize) {
 
-//        Specification<Player> specification = playerSpecification.playersFilter(
-//                name, title, race, profession, after, before, banned,
-//                minExperience, maxExperience, minLevel, maxLevel);
-//
-//        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(order.getFieldName()));
+        Specification<Player> specification = Specification
+                .where(playerSpecification.filterLikeByName(name))
+                .and(playerSpecification.filterLikeByTitle(title))
+                .and(playerSpecification.filterEqualsByRace(race))
+                .and(playerSpecification.filterEqualsByProfession(profession))
+                .and(playerSpecification.filterBetweenByBirthday(after, before))
+                .and(playerSpecification.filterByBanned(banned))
+                .and(playerSpecification.filterBetweenByExperience(minExperience, maxExperience))
+                .and(playerSpecification.filterBetweenByLevel(minLevel, maxLevel));
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(order.getFieldName()));
 
-        return playerService.findAll();
+        return playerService.findAll(specification, pageable);
     }
 
     @GetMapping("/players/count")
@@ -63,11 +72,17 @@ public class PlayerController {
                      @RequestParam(value = "minLevel", required = false) Integer minLevel,
                      @RequestParam(value = "maxLevel", required = false) Integer maxLevel) {
 
-//        Specification<Player> specification = playerSpecification.playersFilter(
-//                name, title, race, profession, after, before, banned,
-//                minExperience, maxExperience, minLevel, maxLevel);
+        Specification<Player> specification = Specification
+                .where(playerSpecification.filterLikeByName(name))
+                .and(playerSpecification.filterLikeByTitle(title))
+                .and(playerSpecification.filterEqualsByRace(race))
+                .and(playerSpecification.filterEqualsByProfession(profession))
+                .and(playerSpecification.filterBetweenByBirthday(after, before))
+                .and(playerSpecification.filterByBanned(banned))
+                .and(playerSpecification.filterBetweenByExperience(minExperience, maxExperience))
+                .and(playerSpecification.filterBetweenByLevel(minLevel, maxLevel));
 
-        return playerService.getCount();
+        return playerService.getCount(specification);
     }
 
     @PostMapping("/players")
@@ -89,6 +104,8 @@ public class PlayerController {
 
     @PostMapping("/players/{id}")
     public Player updatePlayer(@PathVariable("id") long id, @RequestBody Player player) {
+        if (id < 1 && Math.floor(id) == id)
+            throw new ValueNotValidException("Incorrect id number " + id + "!");
 
         Optional<Player> tmpPlayer = playerService.findById(id);
         if (!tmpPlayer.isPresent())

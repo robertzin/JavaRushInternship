@@ -4,6 +4,8 @@ import com.game.entity.Player;
 import com.game.exceptions.ValueNotValidException;
 import com.game.repository.PlayerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,8 +22,8 @@ public class PlayerServiceImpl implements PlayerService {
     }
 
     @Override
-    public List<Player> findAll() {
-        return playerRepository.findAll();
+    public Iterable<Player> findAll(Specification<Player> specification, Pageable pageable) {
+        return playerRepository.findAll(specification, pageable).getContent();
     }
 
     @Override
@@ -30,8 +32,8 @@ public class PlayerServiceImpl implements PlayerService {
     }
 
     @Override
-    public Integer getCount() {
-        return (int) playerRepository.count();
+    public Integer getCount(Specification<Player> specification) {
+        return (int) playerRepository.count(specification);
     }
 
     @Override
@@ -84,7 +86,7 @@ public class PlayerServiceImpl implements PlayerService {
     }
 
     private boolean checkExperienceValue(Player player) throws ValueNotValidException {
-        if (player.getExperience() < 0 || player.getExperience() >= 2_147_483_647)
+        if (player.getExperience() < 0 || player.getExperience() >= 10_000_000)
             throw new ValueNotValidException("Incorrect experience value");
         return true;
     }

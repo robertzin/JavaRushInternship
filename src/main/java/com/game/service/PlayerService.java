@@ -12,9 +12,9 @@ import java.util.Optional;
 
 @Service
 public interface PlayerService {
-    List<Player> findAll();
+    Iterable<Player> findAll(Specification<Player> specification, Pageable pageable);
     Optional<Player> findById(Long id) throws NoSuchElementException;
-    Integer getCount ();
+    Integer getCount (Specification<Player> specification);
     Player create(Player player);
     Player update(Player player);
     void delete(Long id);
